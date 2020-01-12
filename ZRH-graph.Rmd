@@ -1,0 +1,102 @@
+---
+title: "airport-network"
+author: "Thomas Gredig"
+date: "3/13/2019"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+# Airport Network
+
+The data is loaded from [OpenFlights.Org](https://openflights.org/data.html).
+
+The following data is available:
+
+```{r}
+path.source = 'data'
+file.list = dir(path.source, pattern='dat$')
+table(file.list)
+```
+
+## Airports
+
+```{r}
+d = read.csv(file.path(path.source, 'airports.dat'), header=FALSE)
+levels(factor(d$V14))
+d[,c(13,14)] <- NULL
+kable(d[1:5,])
+```
+
+```{r}
+summary(d)
+kable(d[grep('Long Beach',d$V2),])
+```
+
+
+## Airports in Switzerland
+
+Finding all the airports in Switzerland
+
+```{r}
+kable(d[grep('Switzerland',d$V4),])
+```
+
+# Routes
+
+Let us look at the routes database
+
+```{r}
+dr = read.csv(file.path(path.source, 'routes.dat'), header=FALSE,
+              stringsAsFactors = FALSE)
+summary(dr)
+kable(dr[1:5,])
+```
+
+Now also load the airlines and then find all "Swiss" airlines.
+
+```{r}
+da  = read.csv(file.path(path.source, 'airlines.dat'), header=FALSE,
+               stringsAsFactors = FALSE)
+da[grep('Swi',da$V2),]
+```
+
+Now, that we know *4559* is Swiss Airlines, we can find the connections:
+
+```{r}
+dr$V2 = as.numeric(dr$V2)
+dr[which(dr$V2==4559),]
+```
+
+
+There are `r length(which(dr$V2==4559))` flights with "Swiss".
+
+# Graphs
+
+We are following the tutorial on [Network Analysis in R with iGraph](http://kateto.net/networks-r-igraph). We will use the `graph` function, which uses `edges`
+
+```{r}
+library(igraph)
+g1 <- graph( edges=c('a','b','a','c','x','d','c','d'),  directed=F ) 
+plot(g1)
+dr[which(dr$V2==4559),] -> q
+q = q[1:200,]
+g1 <- graph( edges=c(rbind(q$V3, q$V5)) , directed=F)
+plot(g1,vertex.label.cex=.5,edge.color="orange", vertex.size=12, layout=layout_nicely,vertex.color="gray80" )
+
+```
+
+Find the names of some of the airports
+
+```{r}
+d[which(d$V5 %in% c('BCN','BRU','BCN','ARN','DAR','NBO')),]
+```
+
+# Appendix
+
+This report was generated in `r getwd()` on `r Sys.Date()`.
